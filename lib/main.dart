@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:game_of_life/game_board.dart';
 
 import 'array_2d.dart';
 
@@ -41,7 +42,7 @@ class GameOfLifeBoard extends StatefulWidget {
 class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
   late Array2D lifeArray = Array2D(widget.width, widget.height);
   Timer? simulationTimer;
-  double value = 0.0;
+  double value = 0.5;
 
   Duration get simulationTick =>
       Duration(milliseconds: (1000 - (1000 * value)).round());
@@ -62,98 +63,75 @@ class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
     }
   }
 
-  Widget get aliveCell => Container(
-        color: Colors.grey[300],
-        padding: EdgeInsets.all(0.3),
-        child: Container(
-          color: Colors.yellow,
-        ),
-      );
-
-  Widget get deadCell => Container(
-        color: Colors.grey[300],
-        padding: EdgeInsets.all(0.3),
-        child: Container(
-          color: Colors.grey,
-        ),
-      );
-
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
+    return LayoutBuilder(
+      builder: (ctx, constraints) {
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Text("Simulation speed:"),
-                  Expanded(
-                    child: Slider.adaptive(
-                      value: value,
-                      onChangeStart: (_) => _stopSimulation(),
-                      onChangeEnd: (_) => _startSimulation(),
-                      onChanged: (newVal) {
-                        setState(() {
-                          value = newVal;
-                        });
-                      },
-                    ),
-                  )
-                ],
+                  _buildSimulationSpeedControl(),
+                  if (constraints.maxWidth > constraints.maxHeight)
+                    ..._buildSimulationControls(),
+                  if (constraints.maxWidth > constraints.maxHeight)
+                    statusWidget,
+                ].map((widget) => Flexible(child: widget)).toList(),
               ),
-              ElevatedButton(onPressed: _randomize, child: Text("Randomize")),
-              ElevatedButton(
-                  onPressed: running ? _stopSimulation : _startSimulation, child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(running ? Icons.pause : Icons.play_arrow),
-                      SizedBox(width: 5,),
-                      Text(running ? "Pause Simulation": "Start simulation", softWrap: true,),
-                    ],
-                  )),
-              ElevatedButton(onPressed: _tick, child: Text("Step")),
-              ElevatedButton(
-                onPressed: _clear,
-                child: Text("Clear area"),
-              ),
-              Text("Status: ${simulationTimer != null ? 'Running' : 'Stopped'}")
-            ].map((widget) => Flexible(child: widget)).toList(),
-          ),
-        ),
-        Expanded(
-          child: AspectRatio(
-            aspectRatio: 1,
-            child: Column(
-              children: List.generate(
-                lifeArray.width,
-                (x) => Flexible(
-                  child: Row(
-                    children: List.generate(
-                      lifeArray.height,
-                      (y) => Flexible(
-                        child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                var currentPosition = Pair(x, y);
-                                lifeArray[currentPosition] =
-                                    lifeArray[currentPosition] == 0 ? 1 : 0;
-                              });
-                            },
-                            child: lifeArray[Pair(x, y)] == 0
-                                ? deadCell
-                                : aliveCell),
-                      ),
-                    ),
-                  ),
+            ),
+            Expanded(
+              child: AspectRatio(
+                aspectRatio: widget.width / widget.height,
+                child: GameBoard(
+                  lifeArray: lifeArray,
+                  positionCallback: (pos) => setState(() {
+                    lifeArray[pos] = lifeArray[pos] == 0 ? 1 : 0;
+                  }),
                 ),
               ),
             ),
+            if (constraints.maxWidth < constraints.maxHeight)
+              Flexible(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: ([statusWidget] + _buildSimulationControls())
+                      .map((e) => Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: e,
+                          ))
+                      .toList(),
+                ),
+              )
+          ],
+        );
+      },
+    );
+  }
+
+  Widget get statusWidget {
+    return Text("Status: ${simulationTimer != null ? 'Running' : 'Stopped'}");
+  }
+
+  Widget _buildSimulationSpeedControl() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text("Simulation speed:"),
+        Expanded(
+          child: Slider.adaptive(
+            value: value,
+            onChangeStart: (_) => _stopSimulation(),
+            onChangeEnd: (_) => _startSimulation(),
+            onChanged: (newVal) {
+              setState(() {
+                value = newVal;
+              });
+            },
           ),
-        ),
+        )
       ],
     );
   }
@@ -171,6 +149,7 @@ class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
 
   void _tick() {
     var newBoard = Array2D(lifeArray.width, lifeArray.height);
+    bool isEmpty = true;
     for (var x in List.generate(lifeArray.width, (i) => i)) {
       for (var y in List.generate(lifeArray.height, (i) => i)) {
         var currentCell = Pair(x, y);
@@ -185,19 +164,25 @@ class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
 
         if (lifeArray[currentCell] == 0) {
           // Dead cell
-          if (neighbourCount == 3)
+          if (neighbourCount == 3) {
             newBoard[currentCell] = 1;
-          else
+            isEmpty = false;
+          } else {
             newBoard[currentCell] = 0;
+          }
         } else {
           neighbourCount -= 1; // Remove self cell from aliveCount.
           if (neighbourCount >= 2 && neighbourCount <= 3) {
             newBoard[currentCell] = 1;
+            isEmpty = false;
           } else {
             newBoard[currentCell] = 0;
           }
         }
       }
+    }
+    if (isEmpty) {
+      _stopSimulation();
     }
     setState(() {
       lifeArray = newBoard;
@@ -205,7 +190,7 @@ class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
   }
 
   void _startSimulation() {
-    if(simulationTimer == null){
+    if (simulationTimer == null) {
       simulationTimer = Timer.periodic(simulationTick, (_) => _tick());
     }
   }
@@ -224,5 +209,31 @@ class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
           widget.width,
           widget.height);
     });
+  }
+
+  List<Widget> _buildSimulationControls() {
+    return [
+      ElevatedButton(
+          onPressed: running ? _stopSimulation : _startSimulation,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(running ? Icons.pause : Icons.play_arrow),
+              SizedBox(
+                width: 5,
+              ),
+              Text(
+                running ? "Pause Simulation" : "Start simulation",
+                softWrap: true,
+              ),
+            ],
+          )),
+      ElevatedButton(onPressed: _randomize, child: Text("Randomize")),
+      ElevatedButton(onPressed: _tick, child: Text("Step")),
+      ElevatedButton(
+        onPressed: _clear,
+        child: Text("Clear area"),
+      )
+    ];
   }
 }
