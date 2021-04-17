@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Conway\'s Game of Life simulation',
+      title: "Conway's Game of Life simulation",
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
