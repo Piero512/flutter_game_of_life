@@ -22,7 +22,7 @@ class Array2D {
   Array2D.fromIterable(Iterable<int> iter, this.width, this.height)
       : _backingArray = List.from(iter);
 
-  operator [](Pair<int, int> index) {
+  int operator [](Pair<int, int> index) {
     return _backingArray[width * index.first + index.second];
   }
 
@@ -50,6 +50,21 @@ class Array2D {
   int sum() {
     return _backingArray.reduce((value, element) => value + element);
   }
+
+  Array2D resize(int newWidth, int newHeight){
+    var newList = <int>[];
+    for(var i = 0; i < newWidth; i++){
+      for(var j = 0; j < newHeight; j++){
+        try {
+          newList.add(this[Pair(i,j)]);
+        } on RangeError {
+          newList.add(0);
+        }
+      }
+    }
+    return Array2D.fromIterable(newList, newWidth, newHeight);
+  }
+
 
   @override
   String toString() {

@@ -43,6 +43,7 @@ class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
   late Array2D lifeArray = Array2D(widget.width, widget.height);
   Timer? simulationTimer;
   double value = 0.5;
+  int generation = 0;
 
   Duration get simulationTick =>
       Duration(milliseconds: (1000 - (1000 * value)).round());
@@ -97,7 +98,7 @@ class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
               Flexible(
                 child: Wrap(
                   crossAxisAlignment: WrapCrossAlignment.center,
-                  children: ([statusWidget] + _buildSimulationControls())
+                  children: ([statusWidget, generationWidget] + _buildSimulationControls())
                       .map((e) => Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: e,
@@ -114,6 +115,8 @@ class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
   Widget get statusWidget {
     return Text("Status: ${simulationTimer != null ? 'Running' : 'Stopped'}");
   }
+
+  Widget get generationWidget => Text("Generation: $generation");
 
   Widget _buildSimulationSpeedControl() {
     return Row(
@@ -138,6 +141,7 @@ class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
 
   void _randomize() {
     setState(() {
+      generation = 0;
       var rnd = Random();
       for (var x in List.generate(lifeArray.width, (index) => index)) {
         for (var y in List.generate(lifeArray.height, (index) => index)) {
@@ -186,6 +190,7 @@ class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
     }
     setState(() {
       lifeArray = newBoard;
+      generation++;
     });
   }
 
@@ -204,10 +209,11 @@ class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
 
   void _clear() {
     setState(() {
+      generation = 0;
       lifeArray = Array2D.fromIterable(
-          List.generate(widget.width * widget.height, (_) => 0),
-          widget.width,
-          widget.height);
+          List.generate(lifeArray.width * lifeArray.height, (_) => 0),
+          lifeArray.width,
+          lifeArray.height);
     });
   }
 
@@ -233,7 +239,14 @@ class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
       ElevatedButton(
         onPressed: _clear,
         child: Text("Clear area"),
-      )
+      ),
+      ElevatedButton(onPressed: _resizeBoard, child: Text("Resize board"))
     ];
+  }
+
+  void _resizeBoard() {
+    setState(() {
+      lifeArray = lifeArray.resize(40, 40);
+    });
   }
 }
