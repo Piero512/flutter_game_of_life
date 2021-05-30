@@ -23,10 +23,13 @@ class Array2D {
       : _backingArray = List.from(iter);
 
   int operator [](Pair<int, int> index) {
+    if(index.first > width || index.second > height)
+      throw RangeError("$index out of bounds");
     return _backingArray[width * index.first + index.second];
   }
 
   operator []=(Pair<int, int> index, int value) {
+
     _backingArray[width * index.first + index.second] = value;
   }
 

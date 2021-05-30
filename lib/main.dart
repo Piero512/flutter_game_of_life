@@ -88,7 +88,8 @@ class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
             ),
           ),
         ),
-        Flexible(
+        Padding(
+          padding: const EdgeInsets.all(8.0),
           child: Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
             children:
