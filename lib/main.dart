@@ -49,6 +49,7 @@ class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
       Duration(milliseconds: (1000 - (1000 * value)).round());
 
   bool get running => simulationTimer != null;
+
   @override
   void dispose() {
     super.dispose();
@@ -66,49 +67,40 @@ class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (ctx, constraints) {
-        return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildSimulationSpeedControl(),
-                  if (constraints.maxWidth > constraints.maxHeight)
-                    ..._buildSimulationControls(),
-                  if (constraints.maxWidth > constraints.maxHeight)
-                    statusWidget,
-                ].map((widget) => Flexible(child: widget)).toList(),
-              ),
+    return Column(
+      children: [
+        Flexible(
+          flex: 0,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: _buildSimulationSpeedControl(),
+          ),
+        ),
+        Expanded(
+          flex: 4,
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: GameBoard(
+              lifeArray: lifeArray,
+              positionCallback: (pos) => setState(() {
+                lifeArray[pos] = lifeArray[pos] == 0 ? 1 : 0;
+              }),
             ),
-            Expanded(
-              child: AspectRatio(
-                aspectRatio: widget.width / widget.height,
-                child: GameBoard(
-                  lifeArray: lifeArray,
-                  positionCallback: (pos) => setState(() {
-                    lifeArray[pos] = lifeArray[pos] == 0 ? 1 : 0;
-                  }),
-                ),
-              ),
-            ),
-            if (constraints.maxWidth < constraints.maxHeight)
-              Flexible(
-                child: Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: ([statusWidget, generationWidget] + _buildSimulationControls())
-                      .map((e) => Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: e,
-                          ))
-                      .toList(),
-                ),
-              )
-          ],
-        );
-      },
+          ),
+        ),
+        Flexible(
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children:
+                ([statusWidget, generationWidget] + _buildSimulationControls())
+                    .map((e) => Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: e,
+                        ))
+                    .toList(),
+          ),
+        )
+      ],
     );
   }
 
