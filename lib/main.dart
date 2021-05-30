@@ -69,12 +69,9 @@ class _GameOfLifeBoardState extends State<GameOfLifeBoard> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Flexible(
-          flex: 0,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: _buildSimulationSpeedControl(),
-          ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: _buildSimulationSpeedControl(),
         ),
         Expanded(
           flex: 4,
